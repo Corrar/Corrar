@@ -22,23 +22,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Instalar Pillow (avatar em ASCII)
         run: pip install "pillow>=10,<13"
 
+      # O snk roda em Docker como root: a pasta que ele cria fica só para o root,
+      # por isso a cobrinha vai para "cobra/" e os cards para "dist/".
       - name: Gerar a cobrinha
         uses: Platane/snk@v3
         with:
           github_user_name: ${{ github.repository_owner }}
-          outputs: "dist/snake.svg?${{ env.TEMA == 'rosa' && env.COBRA_ROSA || env.COBRA_VERDE }}"
+          outputs: "cobra/snake.svg?${{ env.TEMA == 'rosa' && env.COBRA_ROSA || env.COBRA_VERDE }}"
 
       - name: Gerar os cards
-        run: python scripts/gerar_cards.py --usuario "${{ github.repository_owner }}" --tema "$TEMA" --cobra dist/snake.svg --saida dist
+        run: python scripts/gerar_cards.py --usuario "${{ github.repository_owner }}" --tema "$TEMA" --cobra cobra/snake.svg --saida dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
