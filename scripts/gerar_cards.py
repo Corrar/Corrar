@@ -250,6 +250,8 @@ def ascii_de_imagem(conteudo, colunas, linhas):
     # BOX faz a média dos pixels (sem serrilhado); o corte de 1% ignora artefatos de compressão.
     img = ImageOps.autocontrast(img.resize((colunas, linhas), Image.BOX), cutoff=1)
     passo = 256 / len(RAMPA)
+    # Abaixo de ~20% de cobertura vira espaço: some com o "pó" de pontos nas bordas.
+    img = img.point(lambda v: 0 if v < 2 * passo else v)
     arte = ["".join(RAMPA[int(img.getpixel((x, y)) / passo)] for x in range(colunas)).rstrip()
             for y in range(linhas)]
     while arte and not arte[0]:
@@ -392,6 +394,8 @@ def card_whoami(t, dados, est, arte):
     y += 26
     xx = x0
     for nome, (tam, cor) in top:
+        if 100 * tam / total < 0.5:
+            continue  # fatia pequena demais para a legenda ("Outras 0%")
         rot = f"{nome} {100 * tam / total:.0f}%"
         largura_rot = 13 + len(rot) * 6.6
         if xx > x0 and xx + largura_rot > LARGURA - 24:
