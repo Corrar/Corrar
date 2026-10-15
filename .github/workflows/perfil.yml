@@ -1,0 +1,51 @@
+# Gera os cards do README de perfil (whoami, analytics, contribuições e
+# cobrinha) e publica os SVGs no branch "output", que o README usa.
+name: Atualizar perfil
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # todo dia às 03:00 (horário de Brasília)
+  workflow_dispatch: # permite rodar na mão pela aba Actions
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  TEMA: verde # verde ou rosa
+  COBRA_VERDE: "color_snake=#39d353&color_dots=#161b22,#0e4429,#006d32,#26a641,#39d353"
+  COBRA_ROSA: "color_snake=#ff79c6&color_dots=#1d1923,#4a1d3d,#7a2a5f,#c23f8a,#ff79c6"
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Pillow (avatar em ASCII)
+        run: pip install "pillow>=10,<13"
+
+      - name: Gerar a cobrinha
+        uses: Platane/snk@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: "dist/snake.svg?${{ env.TEMA == 'rosa' && env.COBRA_ROSA || env.COBRA_VERDE }}"
+
+      - name: Gerar os cards
+        run: python scripts/gerar_cards.py --usuario "${{ github.repository_owner }}" --tema "$TEMA" --cobra dist/snake.svg --saida dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publicar no branch output
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
